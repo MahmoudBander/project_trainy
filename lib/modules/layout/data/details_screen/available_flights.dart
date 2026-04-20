@@ -6,15 +6,19 @@ import '../../home.dart';
 import 'details_screen.dart';
 
 class AvailableFlights extends StatefulWidget {
-  final ApiStation fromStation;
-  final ApiStation toStation;
-  final String     departureDate;
+  final ApiStation  fromStation;
+  final ApiStation  toStation;
+  final String      departureDate;
+  final VoidCallback? onBack;
+  final double discountPercent;
 
   const AvailableFlights({
     super.key,
     required this.fromStation,
     required this.toStation,
     required this.departureDate,
+    this.onBack,
+    this.discountPercent = 0,
   });
 
   @override
@@ -45,7 +49,7 @@ class _AvailableFlightsState extends State<AvailableFlights> {
         'badgeColor':    const Color(0xFFFFD700),
         'textColor':     const Color(0xFF000000),
         'ticketTypes': [
-          trip_model.TicketType(name: 'درجة أولى',  description: 'خصم 10% للحجز المبكر', price: '\$150'),
+          trip_model.TicketType(name: 'درجة أولى',  description: 'درجة أولى VIP', price: '\$150'),
           trip_model.TicketType(name: 'درجة ثانية', description: 'مقاعد مريحة',           price: '\$100'),
         ],
         'stations': [
@@ -116,8 +120,7 @@ class _AvailableFlightsState extends State<AvailableFlights> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               IconButton(
-                onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                    context, Home.route, (route) => false, arguments: 4),
+                onPressed: () { if (widget.onBack != null) { widget.onBack!(); } else { Navigator.pop(context); } },
                 icon: const Icon(Icons.arrow_back),
               ),
               const SizedBox(height: 10),
@@ -172,7 +175,21 @@ class _AvailableFlightsState extends State<AvailableFlights> {
     final seats      = j['seats']         as String;
     final badgeColor = j['badgeColor']    as Color;
     final textColor  = j['textColor']     as Color;
-    final ticketTypes = j['ticketTypes']  as List<trip_model.TicketType>;
+    final rawTicketTypes = j['ticketTypes'] as List<trip_model.TicketType>;
+    // الخصم بييجي بس من شاشة الحالة
+    final ticketTypes = widget.discountPercent > 0
+        ? rawTicketTypes.map((t) => trip_model.TicketType(
+      name: t.name,
+      description: t.description,
+      price: t.price,
+      discount: widget.discountPercent.toInt().toString(),
+    )).toList()
+        : rawTicketTypes.map((t) => trip_model.TicketType(
+      name: t.name,
+      description: t.description,
+      price: t.price,
+      discount: '',
+    )).toList();
     final stations    = j['stations']     as List<trip_model.Station>;
 
     final tripDetails = trip_model.TripDetails(

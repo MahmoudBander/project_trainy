@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 class CardStatus extends StatelessWidget {
-  final String   status;
-  final String   detals;
-  final String   category;
-  final bool     selected;
+  final String       status;
+  final String       detals;
+  final String       category;
+  final bool         selected;
   final VoidCallback onTap;
 
   const CardStatus({
@@ -25,16 +25,16 @@ class CardStatus extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: selected ? Colors.black : Colors.white,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(15),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 1, offset: const Offset(1, 5))],
-            border: Border.all(color: selected ? Colors.black : Colors.grey.shade50),
+            border: Border.all(color: Colors.grey.shade50),
           ),
           child: Row(
             children: [
               Icon(
                 selected ? Icons.check_box : Icons.check_box_outline_blank,
-                color: selected ? Colors.white : Colors.grey,
+                color: Colors.black,
                 size: 28,
               ),
               const Spacer(),
@@ -42,11 +42,11 @@ class CardStatus extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(status,
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700,
-                      fontFamily: "Cairo", color: selected ? Colors.white : Colors.black)),
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700,
+                          fontFamily: "Cairo", color: Colors.black)),
                   Text(detals,
-                    style: TextStyle(fontSize: 16, fontFamily: "Cairo",
-                      fontWeight: FontWeight.w400, color: selected ? Colors.white70 : Colors.grey)),
+                      style: const TextStyle(fontSize: 16, fontFamily: "Cairo",
+                          fontWeight: FontWeight.w400, color: Colors.grey)),
                 ],
               ),
             ],

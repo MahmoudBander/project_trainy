@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+import 'package:project_bander/api/api_handler.dart';
+import 'package:project_bander/modules/layout/data/details_screen/available_flights.dart';
 import 'package:project_bander/modules/layout/data/veriflcation.dart';
 import '../../../core/theme/app_color.dart';
 import '../../widget/card_status.dart';
@@ -6,15 +8,20 @@ import '../home.dart';
 
 class Status extends StatefulWidget {
   static const route = "Status";
-  const Status({super.key});
+  final ApiStation fromStation;
+  final ApiStation toStation;
+  final String departureDate;
+  final VoidCallback? onSkip;
+  final Function(String)? onNext;
+  final VoidCallback? onBack;
+  const Status({super.key, required this.fromStation, required this.toStation, required this.departureDate, this.onSkip, this.onNext, this.onBack});
 
   @override
   State<Status> createState() => _StatusState();
 }
 
 class _StatusState extends State<Status> {
-  // الفئة المختارة — تتبعت للـ API
-  String? selectedCategory; // "Child" | "Senior" | "Military" | "Disabled"
+  String? selectedCategory;
 
   @override
   Widget build(BuildContext context) {
@@ -27,48 +34,18 @@ class _StatusState extends State<Status> {
               Padding(
                 padding: const EdgeInsets.only(left: 20),
                 child: GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, Home.route),
-                  child: const Text("تخطي",
-                    style: TextStyle(color: Colors.grey, fontSize: 20, fontWeight: FontWeight.w700, fontFamily: "Cairo"))),
+                  onTap: () { if (widget.onSkip != null) { widget.onSkip!(); } else { Navigator.push(context, MaterialPageRoute(builder: (_) => AvailableFlights(fromStation: widget.fromStation, toStation: widget.toStation, departureDate: widget.departureDate))); } },
+                  child: const Text("تخطي", style: TextStyle(color: Colors.grey, fontSize: 20, fontWeight: FontWeight.w700, fontFamily: "Cairo"))),
               ),
             ]),
             const SizedBox(height: 20),
-            const Text("هل انت مؤهل الحصول علي خصم ؟",
-              style: TextStyle(fontFamily: "Cairo", fontSize: 24, fontWeight: FontWeight.w700)),
-            const Text("بعض الفئات تحصل علي تخفيضات خاصه علي التذاكر",
-              style: TextStyle(fontFamily: "Cairo", fontSize: 16, fontWeight: FontWeight.w400, color: Colors.grey)),
+            const Text("هل انت مؤهل الحصول علي خصم ؟", style: TextStyle(fontFamily: "Cairo", fontSize: 24, fontWeight: FontWeight.w700)),
+            const Text("بعض الفئات تحصل علي تخفيضات خاصه علي التذاكر", style: TextStyle(fontFamily: "Cairo", fontSize: 16, fontWeight: FontWeight.w400, color: Colors.grey)),
             const SizedBox(height: 20),
-
-            // ── كل كارت بيبعت الـ category للـ Veriflcation ────────────────
-            CardStatus(
-              status:   "تذاكر الاطفال",
-              detals:   "خصم يصل ل 50% | الاطفال دون 16 سنة",
-              category: "Child",
-              selected: selectedCategory == "Child",
-              onTap:    () => setState(() => selectedCategory = "Child"),
-            ),
-            CardStatus(
-              status:   "كبار السن",
-              detals:   "خصم يصل ل50%  لمن هم فوق 60 سنه",
-              category: "Senior",
-              selected: selectedCategory == "Senior",
-              onTap:    () => setState(() => selectedCategory = "Senior"),
-            ),
-            CardStatus(
-              status:   "مجند بالخدمة العسكرية",
-              detals:   "التذكرة مجانية",
-              category: "Military",
-              selected: selectedCategory == "Military",
-              onTap:    () => setState(() => selectedCategory = "Military"),
-            ),
-            CardStatus(
-              status:   "من ذوي الاحتياجات الخاصة",
-              detals:   "التذكرة مجانية",
-              category: "Disabled",
-              selected: selectedCategory == "Disabled",
-              onTap:    () => setState(() => selectedCategory = "Disabled"),
-            ),
-
+            CardStatus(status: "تذاكر الاطفال", detals: "خصم يصل ل 50% | الاطفال دون 16 سنة", category: "Child", selected: selectedCategory == "Child", onTap: () => setState(() => selectedCategory = "Child")),
+            CardStatus(status: "كبار السن", detals: "خصم يصل ل50%  لمن هم فوق 60 سنه", category: "Senior", selected: selectedCategory == "Senior", onTap: () => setState(() => selectedCategory = "Senior")),
+            CardStatus(status: "مجند بالخدمة العسكرية", detals: "التذكرة مجانية", category: "Military", selected: selectedCategory == "Military", onTap: () => setState(() => selectedCategory = "Military")),
+            CardStatus(status: "من ذوي الاحتياجات الخاصة", detals: "التذكرة مجانية", category: "Disabled", selected: selectedCategory == "Disabled", onTap: () => setState(() => selectedCategory = "Disabled")),
             const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -76,20 +53,11 @@ class _StatusState extends State<Status> {
                 width: double.infinity, height: 60,
                 child: ElevatedButton(
                   onPressed: () {
-                    if (selectedCategory == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("من فضلك اختر فئة أولاً")));
-                      return;
-                    }
-                    Navigator.push(context, MaterialPageRoute(
-                      builder: (_) => Veriflcation(category: selectedCategory!)));
+                    if (selectedCategory == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("من فضلك اختر فئة أولاً"))); return; }
+                    if (widget.onNext != null) { widget.onNext!(selectedCategory!); } else { Navigator.push(context, MaterialPageRoute(builder: (_) => Veriflcation(category: selectedCategory!, fromStation: widget.fromStation, toStation: widget.toStation, departureDate: widget.departureDate))); }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF121212),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    elevation: 5),
-                  child: const Text("متابعه",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontFamily: "Cairo", fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF121212), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)), elevation: 5),
+                  child: const Text("متابعه", style: TextStyle(color: Colors.white, fontSize: 20, fontFamily: "Cairo", fontWeight: FontWeight.bold)),
                 ),
               ),
             ),
