@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_bander/core/session_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:project_bander/api/api_handler.dart';
 import 'package:project_bander/modules/widget/trip_model.dart';
@@ -33,7 +34,7 @@ class _SeatsscreenState extends State<Seatsscreen> {
         _loadingSeats = false;
         if (result['success'] == true && result['data'] != null) {
           reservedSeats = List<int>.from(
-            (result['data'] as List).map((s) => s['seatNumber'] ?? s).whereType<int>()
+              (result['data'] as List).map((s) => s['seatNumber'] ?? s).whereType<int>()
           );
         }
       });
@@ -59,7 +60,7 @@ class _SeatsscreenState extends State<Seatsscreen> {
                 ),
                 const SizedBox(width: 75),
                 Text("اختر مقعدك",
-                  style: GoogleFonts.cairo(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
+                    style: GoogleFonts.cairo(fontSize: 24, fontWeight: FontWeight.w700, color: Colors.white)),
               ]),
             ),
           ),
@@ -81,36 +82,36 @@ class _SeatsscreenState extends State<Seatsscreen> {
                       child: _loadingSeats
                           ? const Center(child: CircularProgressIndicator(color: Colors.black))
                           : SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  const SizedBox(height: 25),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      buildClassItem("درجة اولي", true),
-                                      buildClassItem("درجة ثانية", false),
-                                      buildClassItem("عربة نوم", false),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 15),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                    children: [
-                                      buildLegend("متاح",  const Color(0xffBEB3B3)),
-                                      buildLegend("مختار", const Color(0xff361AAE)),
-                                      buildLegend("محجوز", const Color(0xffD70D0D)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 10),
-                                  ImgSeats(
-                                    reservedSeats: reservedSeats,
-                                    onSeatsSelected: (List<String> list) {
-                                      setState(() { selectedSeats = list; });
-                                    },
-                                  ),
-                                ],
-                              ),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 25),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                buildClassItem("درجة اولي", true),
+                                buildClassItem("درجة ثانية", false),
+                                buildClassItem("عربة نوم", false),
+                              ],
                             ),
+                            const SizedBox(height: 15),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                buildLegend("متاح",  const Color(0xffBEB3B3)),
+                                buildLegend("مختار", const Color(0xff361AAE)),
+                                buildLegend("محجوز", const Color(0xffD70D0D)),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            ImgSeats(
+                              reservedSeats: reservedSeats,
+                              onSeatsSelected: (List<String> list) {
+                                setState(() { selectedSeats = list; });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -119,8 +120,19 @@ class _SeatsscreenState extends State<Seatsscreen> {
                   width: 394,
                   height: 72,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       if (selectedSeats.isNotEmpty) {
+                        // احفظ بيانات الرحلة كاملة
+                        await SessionManager.saveTripData(
+                          fromStation: widget.tripDetails.from,
+                          toStation:   widget.tripDetails.to,
+                          departure:   widget.tripDetails.stations.isNotEmpty ? widget.tripDetails.stations.first.time : '',
+                          arrival:     widget.tripDetails.stations.length > 1  ? widget.tripDetails.stations.last.time  : '',
+                          trainName:   widget.tripDetails.trainName,
+                          tripDate:    widget.tripDetails.date,
+                          seatNumber:  selectedSeats.join(', '),
+                        );
+                        if (!context.mounted) return;
                         Navigator.push(context, MaterialPageRoute(
                           builder: (_) => ConfirmationScreen(
                             selectedSeats: selectedSeats,
@@ -130,7 +142,7 @@ class _SeatsscreenState extends State<Seatsscreen> {
                         ));
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("برجاء اختيار مقعد أولاً", textAlign: TextAlign.right)));
+                            const SnackBar(content: Text("برجاء اختيار مقعد أولاً", textAlign: TextAlign.right)));
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -138,7 +150,7 @@ class _SeatsscreenState extends State<Seatsscreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(59)),
                     ),
                     child: Text("تأكيد الاختيار",
-                      style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 32, color: Colors.white)),
+                        style: GoogleFonts.cairo(fontWeight: FontWeight.w700, fontSize: 32, color: Colors.white)),
                   ),
                 ),
               ],
@@ -156,7 +168,7 @@ class _SeatsscreenState extends State<Seatsscreen> {
       borderRadius: BorderRadius.circular(25),
     ),
     child: Text(text,
-      style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700, color: isSelected ? Colors.white : Colors.black)),
+        style: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w700, color: isSelected ? Colors.white : Colors.black)),
   );
 
   Widget buildLegend(String text, Color color) => Row(children: [

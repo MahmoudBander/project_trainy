@@ -16,16 +16,15 @@ class _RecoveredscreenState extends State<Recoveredscreen> {
   void initState() {
     super.initState();
 
-    // إعداد المؤقت الزمني: 3 ثوانٍ ثم الانتقال
     Timer(const Duration(seconds: 3), () {
-      // نستخدم pushReplacement لمنع المستخدم من العودة لهذه الصفحة مرة أخرى عند الضغط على زر الرجوع
-      // تأكد من استبدال اسم الصفحة (HomeScreen) بالاسم الفعلي لصفحة البداية عندك
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(
           context,
           Home.route,
-              (route) => false, // بيمسح الصفحات اللي فاتت عشان يظهر البوتوم بار كأنك لسه داخل
-          arguments: 4,     // رقم 3 هو الـ Index بتاع صفحة "تذاكري" في الـ list بتاعتك
+          (route) =>
+              false,
+          arguments:
+              4,
         );
       }
     });
@@ -45,7 +44,9 @@ class _RecoveredscreenState extends State<Recoveredscreen> {
               height: 90,
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage("assets/images/icons/5965208742762581546.jpg"),
+                  image: AssetImage(
+                    "assets/images/icons/5965208742762581546.jpg",
+                  ),
                   fit: BoxFit.cover,
                 ),
               ),

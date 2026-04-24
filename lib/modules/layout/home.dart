@@ -17,7 +17,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   int currentIndex = 0;
-  bool _isFirstRun = true; // متغير لضمان استلام الـ Index مرة واحدة عند التشغيل
+  bool _isFirstRun = true;
 
   List<Widget> tabs = const [
     ProfileTab(),
@@ -31,7 +31,6 @@ class _HomeState extends State<Home> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // استقبال الـ Index المبعوث من صفحة التحقق (Veriflcation)
     if (_isFirstRun) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is int) {

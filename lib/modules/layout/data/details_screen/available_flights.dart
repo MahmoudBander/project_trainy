@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_bander/core/session_manager.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:project_bander/api/api_handler.dart';
 import '../../../widget/trip_model.dart' as trip_model;
@@ -230,9 +231,19 @@ class _AvailableFlightsState extends State<AvailableFlights> {
               SizedBox(
                 width: 110, height: 48,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) =>
-                          DetailsScreen(tripDetails: tripDetails, journeyId: 0))),
+                  onPressed: () async {
+                    await SessionManager.saveTripData(
+                      fromStation: tripDetails.from,
+                      toStation:   tripDetails.to,
+                      departure:   tripDetails.stations.isNotEmpty ? tripDetails.stations.first.time : '',
+                      arrival:     tripDetails.stations.length > 1  ? tripDetails.stations.last.time  : '',
+                      trainName:   tripDetails.trainName,
+                      tripDate:    tripDetails.date,
+                    );
+                    if (!context.mounted) return;
+                    Navigator.push(context, MaterialPageRoute(builder: (_) =>
+                        DetailsScreen(tripDetails: tripDetails, journeyId: 0)));
+                  },
                   style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.black, foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(

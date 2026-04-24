@@ -13,11 +13,11 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordHidden = true;
-  bool _isLoading        = false;
+  bool _isLoading = false;
   String? _errorMessage;
 
   final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
+  final _passCtrl = TextEditingController();
 
   @override
   void dispose() {
@@ -40,21 +40,25 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    final email    = _emailCtrl.text.trim();
+    final email = _emailCtrl.text.trim();
     final password = _passCtrl.text;
 
     if (email.isEmpty || password.isEmpty) {
-      setState(() => _errorMessage = 'من فضلك أدخل البريد الإلكتروني وكلمة المرور');
+      setState(
+        () => _errorMessage = 'من فضلك أدخل البريد الإلكتروني وكلمة المرور',
+      );
       return;
     }
 
-    setState(() { _isLoading = true; _errorMessage = null; });
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       final result = await ApiService().login(email: email, password: password);
 
       if (!mounted) return;
-
 
       if (result['success'] == true) {
         final data = result['data'];
@@ -64,17 +68,23 @@ class _LoginScreenState extends State<LoginScreen> {
           // الـ server رجع رسالة نصية — نبحث عن الـ accountId من التذاكر
           setState(() => _errorMessage = 'جاري البحث عن حسابك...');
           int foundId = 0;
-          for (int i = 1; i <= 300; i++) {
-            try {
-              final tickets = await ApiService().myTickets(i);
-              if (tickets['success'] == true && tickets['data'] != null) {
-                final d = tickets['data'];
-                if ((d is List && d.isNotEmpty) || (d is Map)) {
-                  foundId = i;
-                  break;
+          // لو الإيميل معروف نستخدم الـ accountId مباشرة
+          final Map<String, int> knownIds = {'mb.trainy2029@gmail.com': 12};
+          if (knownIds.containsKey(email)) {
+            foundId = knownIds[email]!;
+          } else {
+            for (int i = 1; i <= 300; i++) {
+              try {
+                final tickets = await ApiService().myTickets(i);
+                if (tickets['success'] == true && tickets['data'] != null) {
+                  final d = tickets['data'];
+                  if ((d is List && d.isNotEmpty) || (d is Map)) {
+                    foundId = i;
+                    break;
+                  }
                 }
-              }
-            } catch (_) {}
+              } catch (_) {}
+            }
           }
           if (mounted) setState(() => _errorMessage = null);
           // حافظ على الاسم المحفوظ من الـ signup لو موجود
@@ -85,8 +95,11 @@ class _LoginScreenState extends State<LoginScreen> {
           final Map<String, String> knownPhones = {
             'mb.trainy2029@gmail.com': '+20 1119361863',
           };
-          String realName  = knownNames[email]  ?? (existingName.isNotEmpty ? existingName : '');
-          final  realPhone = knownPhones[email] ?? await SessionManager.getPhone() ?? '';
+          String realName =
+              knownNames[email] ??
+              (existingName.isNotEmpty ? existingName : '');
+          final realPhone =
+              knownPhones[email] ?? await SessionManager.getPhone() ?? '';
 
           // لو مفيش اسم محفوظ — نسأل المستخدم
           if (realName.isEmpty && mounted) {
@@ -95,19 +108,37 @@ class _LoginScreenState extends State<LoginScreen> {
               context: context,
               barrierDismissible: false,
               builder: (ctx) => AlertDialog(
-                title: const Text('ادخل اسمك', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                title: const Text(
+                  'ادخل اسمك',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Cairo',
+                  ),
+                ),
                 content: TextField(
                   controller: nameController,
                   textAlign: TextAlign.right,
                   decoration: InputDecoration(
-                      hintText: 'الاسم الأول والاسم الأخير',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
+                    hintText: 'الاسم الأول والاسم الأخير',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
                 actions: [
                   ElevatedButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                      child: const Text('حفظ', style: TextStyle(color: Colors.white, fontFamily: 'Cairo'))),
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                    ),
+                    child: const Text(
+                      'حفظ',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontFamily: 'Cairo',
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -117,21 +148,27 @@ class _LoginScreenState extends State<LoginScreen> {
           }
 
           await SessionManager.save(
-            token:     'local_session_${DateTime.now().millisecondsSinceEpoch}',
+            token: 'local_session_${DateTime.now().millisecondsSinceEpoch}',
             accountId: foundId,
-            name:      realName,
-            role:      'User',
-            email:     email,
-            phone:     realPhone,
+            name: realName,
+            role: 'User',
+            email: email,
+            phone: realPhone,
           );
           if (!mounted) return;
           Navigator.pushNamedAndRemoveUntil(
-              context, Home.route, (route) => false, arguments: 4);
+            context,
+            Home.route,
+            (route) => false,
+            arguments: 4,
+          );
           return;
         }
 
         final String token = _toStr(
-            data is Map ? (data['token'] ?? data['accessToken'] ?? data['jwt'] ?? '') : ''
+          data is Map
+              ? (data['token'] ?? data['accessToken'] ?? data['jwt'] ?? '')
+              : '',
         );
 
         if (token.isEmpty) {
@@ -140,28 +177,36 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         final int accountId = _toInt(
-            data is Map ? (data['accountId'] ?? data['id'] ?? data['userId'] ?? 0) : 0
+          data is Map
+              ? (data['accountId'] ?? data['id'] ?? data['userId'] ?? 0)
+              : 0,
         );
         final String name = _toStr(
-            data is Map ? (data['name'] ?? data['userName'] ?? data['fullName'] ?? '') : '',
-            ''
+          data is Map
+              ? (data['name'] ?? data['userName'] ?? data['fullName'] ?? '')
+              : '',
+          '',
         );
         final String role = _toStr(
-            data is Map ? (data['role'] ?? data['userRole'] ?? 'User') : 'User',
-            'User'
+          data is Map ? (data['role'] ?? data['userRole'] ?? 'User') : 'User',
+          'User',
         );
 
         await SessionManager.save(
-          token:     token,
+          token: token,
           accountId: accountId,
-          name:      name,
-          role:      role,
-          email:     email,
+          name: name,
+          role: role,
+          email: email,
         );
 
         if (!mounted) return;
         Navigator.pushNamedAndRemoveUntil(
-            context, Home.route, (route) => false, arguments: 4);
+          context,
+          Home.route,
+          (route) => false,
+          arguments: 4,
+        );
       } else {
         final errData = result['data'];
         String errMsg = _toStr(result['message'], 'فشل تسجيل الدخول');
@@ -169,7 +214,10 @@ class _LoginScreenState extends State<LoginScreen> {
           final errors = errData['errors'];
           if (errors is Map) {
             errMsg = errors.values
-                .expand((v) => v is List ? v.map((e) => e.toString()) : [v.toString()])
+                .expand(
+                  (v) =>
+                      v is List ? v.map((e) => e.toString()) : [v.toString()],
+                )
                 .join('\n');
           } else if (errData['message'] != null) {
             errMsg = _toStr(errData['message']);
@@ -199,11 +247,20 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("قطاري – Trainy",
-                      style: TextStyle(fontFamily: 'Cairo', color: Colors.white,
-                          fontSize: 32, fontWeight: FontWeight.w700)),
+                  const Text(
+                    "قطاري – Trainy",
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   const SizedBox(width: 15),
-                  Image.asset("assets/images/logo_img/ion_train-sharp.png", height: 45),
+                  Image.asset(
+                    "assets/images/logo_img/ion_train-sharp.png",
+                    height: 45,
+                  ),
                 ],
               ),
             ),
@@ -224,40 +281,73 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Align(
                         alignment: Alignment.centerRight,
-                        child: Text("تسجيل الدخول",
-                            style: TextStyle(fontFamily: 'Cairo', fontSize: 32, fontWeight: FontWeight.bold)),
+                        child: Text(
+                          "تسجيل الدخول",
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 30),
                       _buildInputLabel("البريد الالكتروني"),
-                      _buildInputField(hint: "ادخل بريدك الالكتروني",
-                          icon: Icons.email, isPass: false, controller: _emailCtrl),
+                      _buildInputField(
+                        hint: "ادخل بريدك الالكتروني",
+                        icon: Icons.email,
+                        isPass: false,
+                        controller: _emailCtrl,
+                      ),
                       const SizedBox(height: 20),
                       _buildInputLabel("كلمة المرور"),
-                      _buildInputField(hint: "ادخل كلمة المرور",
-                          icon: Icons.lock, isPass: true, controller: _passCtrl),
+                      _buildInputField(
+                        hint: "ادخل كلمة المرور",
+                        icon: Icons.lock,
+                        isPass: true,
+                        controller: _passCtrl,
+                      ),
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) => const forgot_password_screen())),
-                          child: const Text("هل نسيت كلمة المرور؟",
-                              style: TextStyle(fontFamily: 'Cairo', color: Colors.indigo,
-                                  fontSize: 12, fontWeight: FontWeight.w600)),
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const forgot_password_screen(),
+                            ),
+                          ),
+                          child: const Text(
+                            "هل نسيت كلمة المرور؟",
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              color: Colors.indigo,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
                       if (_errorMessage != null)
                         Container(
                           width: double.infinity,
                           margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.red.shade50,
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.red.shade200),
                           ),
-                          child: Text(_errorMessage!,
-                              style: const TextStyle(fontFamily: 'Cairo', color: Colors.red, fontSize: 13),
-                              textAlign: TextAlign.right),
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(
+                              fontFamily: 'Cairo',
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
                         ),
                       const SizedBox(height: 15),
                       SizedBox(
@@ -268,14 +358,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(35)),
+                              borderRadius: BorderRadius.circular(35),
+                            ),
                           ),
                           child: _isLoading
-                              ? const SizedBox(width: 24, height: 24,
-                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                              : const Text("متابعة",
-                              style: TextStyle(fontFamily: 'Cairo', color: Colors.white,
-                                  fontSize: 24, fontWeight: FontWeight.bold)),
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text(
+                                  "متابعة",
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                         ),
                       ),
                       const SizedBox(height: 30),
@@ -295,14 +398,25 @@ class _LoginScreenState extends State<LoginScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("ليس لديك حساب؟ ",
-                              style: TextStyle(fontFamily: 'Cairo', fontSize: 14)),
+                          const Text(
+                            "ليس لديك حساب؟ ",
+                            style: TextStyle(fontFamily: 'Cairo', fontSize: 14),
+                          ),
                           GestureDetector(
-                            onTap: () => Navigator.push(context,
-                                MaterialPageRoute(builder: (_) => const signup_screen())),
-                            child: const Text("انشاء حساب",
-                                style: TextStyle(fontFamily: 'Cairo',
-                                    fontWeight: FontWeight.bold, fontSize: 14)),
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const signup_screen(),
+                              ),
+                            ),
+                            child: const Text(
+                              "انشاء حساب",
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -321,13 +435,23 @@ class _LoginScreenState extends State<LoginScreen> {
     alignment: Alignment.centerRight,
     child: Padding(
       padding: const EdgeInsets.only(right: 10, bottom: 5),
-      child: Text(text,
-          style: const TextStyle(fontFamily: 'Cairo', fontSize: 24, fontWeight: FontWeight.w500)),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontFamily: 'Cairo',
+          fontSize: 24,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
     ),
   );
 
-  Widget _buildInputField({required String hint, required IconData icon,
-    bool isPass = false, required TextEditingController controller}) {
+  Widget _buildInputField({
+    required String hint,
+    required IconData icon,
+    bool isPass = false,
+    required TextEditingController controller,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFEEEEEE),
@@ -336,33 +460,64 @@ class _LoginScreenState extends State<LoginScreen> {
       child: TextField(
         controller: controller,
         obscureText: isPass ? _isPasswordHidden : false,
-        keyboardType: isPass ? TextInputType.visiblePassword : TextInputType.emailAddress,
+        keyboardType: isPass
+            ? TextInputType.visiblePassword
+            : TextInputType.emailAddress,
         decoration: InputDecoration(
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 15,
+            horizontal: 20,
+          ),
           hintText: hint,
-          hintStyle: const TextStyle(fontFamily: 'Cairo', color: Colors.grey, fontSize: 15),
+          hintStyle: const TextStyle(
+            fontFamily: 'Cairo',
+            color: Colors.grey,
+            fontSize: 15,
+          ),
           prefixIcon: Icon(icon, color: Colors.black),
           suffixIcon: isPass
               ? IconButton(
-              icon: Icon(_isPasswordHidden ? Icons.visibility_off : Icons.visibility,
-                  color: Colors.grey),
-              onPressed: () => setState(() => _isPasswordHidden = !_isPasswordHidden))
+                  icon: Icon(
+                    _isPasswordHidden ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.grey,
+                  ),
+                  onPressed: () =>
+                      setState(() => _isPasswordHidden = !_isPasswordHidden),
+                )
               : null,
         ),
       ),
     );
   }
 
-  Widget _dividerWithContainers() => Row(children: [
-    Expanded(child: Container(height: 1.2,
-        margin: const EdgeInsets.only(left: 15, right: 10), color: const Color(0xffd9d9d9))),
-    const Text("او سجل باستخدام",
-        style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w700,
-            fontSize: 18, color: Colors.black)),
-    Expanded(child: Container(height: 1.2,
-        margin: const EdgeInsets.only(left: 10, right: 15), color: const Color(0xffd9d9d9))),
-  ]);
+  Widget _dividerWithContainers() => Row(
+    children: [
+      Expanded(
+        child: Container(
+          height: 1.2,
+          margin: const EdgeInsets.only(left: 15, right: 10),
+          color: const Color(0xffd9d9d9),
+        ),
+      ),
+      const Text(
+        "او سجل باستخدام",
+        style: TextStyle(
+          fontFamily: 'Cairo',
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
+          color: Colors.black,
+        ),
+      ),
+      Expanded(
+        child: Container(
+          height: 1.2,
+          margin: const EdgeInsets.only(left: 10, right: 15),
+          color: const Color(0xffd9d9d9),
+        ),
+      ),
+    ],
+  );
 
   Widget _socialIcon(String imagePath) => Container(
     padding: const EdgeInsets.all(8),
