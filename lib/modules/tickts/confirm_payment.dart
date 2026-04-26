@@ -1,8 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:project_bander/api/api_handler.dart';
+import 'package:project_bander/core/notification_service.dart';
 import 'package:project_bander/core/session_manager.dart';
 import 'package:project_bander/modules/tickts/booked_screen.dart';
+import 'package:project_bander/modules/tickts/tickets_storage/tickets_storage.dart';
 
 class ConfirmPayment extends StatefulWidget {
   final String? paymentMethod;
@@ -44,6 +46,60 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     super.dispose();
   }
 
+  Future<void> _saveTicketLocally(int ticketId) async {
+    final from  = await SessionManager.getFromStation() ?? '';
+    final to    = await SessionManager.getToStation()   ?? '';
+    final train = await SessionManager.getTrainName()   ?? '';
+    final date  = await SessionManager.getTripDate()    ?? '';
+    final dep   = await SessionManager.getDeparture()   ?? '';
+    final arr   = await SessionManager.getArrival()     ?? '';
+    final seat  = await SessionManager.getSeatNumber()  ?? '';
+    final price = await SessionManager.getTicketPrice() ?? widget.totalPrice;
+
+    await TicketsStorage.add(TicketModel(
+      ticketId:    ticketId,
+      fromStation: from,
+      toStation:   to,
+      trainName:   train,
+      tripDate:    date,
+      departure:   dep,
+      arrival:     arr,
+      seatNumber:  seat,
+      ticketPrice: price,
+      status:      'upcoming',
+      createdAt:   DateTime.now(),
+    ));
+  }
+
+  Future<void> _sendNotifications(int ticketId) async {
+    final totalPaid = (widget.totalPrice + 20).toStringAsFixed(0);
+    await NotificationService.show(
+      id:    ticketId,
+      title: 'تم تاكيد الحجز',
+      body:  'تم دفع $totalPaid ج.م بنجاح',
+    );
+    final dep  = await SessionManager.getDeparture() ?? '';
+    final date = await SessionManager.getTripDate()  ?? '';
+    try {
+      final timeMatch = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(dep);
+      if (timeMatch != null && date.isNotEmpty) {
+        int hour   = int.parse(timeMatch.group(1)!);
+        int minute = int.parse(timeMatch.group(2)!);
+        if (dep.contains('مساء') && hour != 12) hour += 12;
+        if (dep.contains('صباح') && hour == 12) hour = 0;
+        final tripTime = DateTime.parse(date).add(Duration(hours: hour, minutes: minute));
+        final remind   = tripTime.subtract(const Duration(hours: 1));
+        final depClean = dep.replaceAll('وقت المغادرة', '').trim();
+        await NotificationService.schedule(
+          id:            ticketId + 1000,
+          title:         'قطارك بعد ساعة',
+          body:          'تحرك القطار الساعة $depClean',
+          scheduledTime: remind,
+        );
+      }
+    } catch (_) {}
+  }
+
   Future<void> _confirmPayment() async {
     final cardNumber = _cardNumberController.text.trim();
     final cardHolder = _cardHolderController.text.trim();
@@ -75,16 +131,16 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
     try {
       final accountId = await SessionManager.getAccountId() ?? 0;
       final api = ApiService();
-
       final List<int> createdTicketIds = [];
 
       if (widget.journeyId == 0) {
         await Future.delayed(const Duration(seconds: 1));
+        final savedId = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+        await _saveTicketLocally(savedId);
+        await _sendNotifications(savedId);
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => BookedScreen(ticketIds: [1, 2, 3])),
-        );
+        Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (_) => BookedScreen(ticketIds: [1, 2, 3])));
         return;
       }
 
@@ -119,13 +175,14 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
         }
       }
 
+      final savedId = createdTicketIds.isNotEmpty ? createdTicketIds.first : 0;
+      await _saveTicketLocally(savedId);
+      await _sendNotifications(savedId);
+
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => BookedScreen(ticketIds: createdTicketIds),
-        ),
-      );
+      Navigator.pushReplacement(context,
+          MaterialPageRoute(builder: (_) => BookedScreen(ticketIds: createdTicketIds)));
+
     } catch (_) {
       if (mounted)
         setState(() {
@@ -198,7 +255,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          // ── عنوان: أيقونة + نص بـ Flexible ──────────────
                           Row(
                             children: [
                               const Icon(
@@ -217,8 +273,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                             ],
                           ),
                           const SizedBox(height: 20),
-
-                          // ── رقم البطاقة ───────────────────────────────────
                           _fieldLabel("رقم البطاقة"),
                           const SizedBox(height: 15),
                           _cardField(
@@ -229,8 +283,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                             hasVisaLogo: true,
                           ),
                           const SizedBox(height: 15),
-
-                          // ── اسم صاحب البطاقة ──────────────────────────────
                           _fieldLabel("اسم صاحب البطاقة"),
                           const SizedBox(height: 15),
                           _cardField(
@@ -240,8 +292,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                             placeholder: "ادخل الاسم كما هو علي البطاقة",
                           ),
                           const SizedBox(height: 40),
-
-                          // ── تاريخ الانتهاء + CVC ──────────────────────────
                           Row(
                             children: [
                               Expanded(
@@ -283,10 +333,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 30),
-
-                  // ── ملخص السعر ────────────────────────────────────────────
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Column(
@@ -306,10 +353,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // ── رسالة خطأ ─────────────────────────────────────────────
                   if (_errorMessage != null)
                     Container(
                       margin: const EdgeInsets.symmetric(
@@ -331,10 +375,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                         textAlign: TextAlign.right,
                       ),
                     ),
-
                   const SizedBox(height: 10),
-
-                  // ── زرار تأكيد الدفع ──────────────────────────────────────
                   SizedBox(
                     width: 349,
                     height: 76,
@@ -367,7 +408,6 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 15),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -473,12 +513,7 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
               keyboardType: keyboardType,
               maxLength: maxLength,
               buildCounter: maxLength != null
-                  ? (
-                  _, {
-                    required currentLength,
-                    required isFocused,
-                    maxLength,
-                  }) => null
+                  ? (_, {required currentLength, required isFocused, maxLength}) => null
                   : null,
               decoration: InputDecoration(
                 border: InputBorder.none,

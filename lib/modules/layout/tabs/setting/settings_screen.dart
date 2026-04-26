@@ -1,6 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:project_bander/features/auth/presention/pages/login_screen.dart';
+
+import '../../home.dart';
 
 
 class SettingsScreen extends StatelessWidget {
@@ -21,9 +24,14 @@ class SettingsScreen extends StatelessWidget {
                   bottom: 35,
                   child: IconButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        Home.route,
+                            (route) => false, // بيمسح الصفحات اللي فاتت عشان يظهر البوتوم بار كأنك لسه داخل
+                        arguments: 0,     // رقم 3 هو الـ Index بتاع صفحة "تذاكري" في الـ list بتاعتك
+                      );
                     },
-                    icon: Icon(Icons.arrow_back),
+                    icon: Icon(Icons.chevron_left),
                     iconSize: 24,
                     color: Colors.black,
                   ),
@@ -72,7 +80,7 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "ادارة الحساب",
@@ -89,7 +97,7 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "التحقق من الخصوصية",
@@ -105,8 +113,15 @@ class SettingsScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          onPressed: () {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              Home.route,
+                                  (route) => false, // بيمسح الصفحات اللي فاتت عشان يظهر البوتوم بار كأنك لسه داخل
+                              arguments: 2,     // رقم 3 هو الـ Index بتاع صفحة "تذاكري" في الـ list بتاعتك
+                            );
+                          },
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "الاشتراكات",
@@ -122,8 +137,15 @@ class SettingsScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          onPressed: () {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              Home.route,
+                                  (route) => false, // بيمسح الصفحات اللي فاتت عشان يظهر البوتوم بار كأنك لسه داخل
+                              arguments: 1,     // رقم 3 هو الـ Index بتاع صفحة "تذاكري" في الـ list بتاعتك
+                            );
+                          },
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "الاشعارات",
@@ -139,8 +161,13 @@ class SettingsScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => LoginScreen()),
+                            );
+                          },
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "اضافة حساب",
@@ -157,7 +184,7 @@ class SettingsScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "الامان",
@@ -173,8 +200,13 @@ class SettingsScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => LoginScreen()),
+                            );
+                          },
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "تسجيل الخروج",

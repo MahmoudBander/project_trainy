@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../home.dart';
+
 class HelpCenterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -20,9 +22,14 @@ class HelpCenterScreen extends StatelessWidget {
                   bottom: 35,
                   child: IconButton(
                     onPressed: () {
-                      Navigator.pop(context);
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        Home.route,
+                            (route) => false, // بيمسح الصفحات اللي فاتت عشان يظهر البوتوم بار كأنك لسه داخل
+                        arguments: 0,     // رقم 3 هو الـ Index بتاع صفحة "تذاكري" في الـ list بتاعتك
+                      );
                     },
-                    icon: Icon(Icons.arrow_back),
+                    icon: Icon(Icons.chevron_left),
                     iconSize: 24,
                     color: Colors.black,
                   ),
@@ -59,7 +66,7 @@ class HelpCenterScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "شروط الخدمة",
@@ -76,7 +83,7 @@ class HelpCenterScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "سياسة الخصوصية",
@@ -93,7 +100,7 @@ class HelpCenterScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () {},
-                          icon: Icon(Icons.arrow_back),
+                          icon: Icon(Icons.chevron_left),
                         ),
                         Text(
                           "معلومات حول",

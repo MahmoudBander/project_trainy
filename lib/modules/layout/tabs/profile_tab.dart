@@ -4,7 +4,9 @@ import 'package:project_bander/features/auth/presention/pages/login_screen.dart'
 import 'package:project_bander/modules/layout/tabs/setting/help_center_screen.dart';
 import 'package:project_bander/modules/layout/tabs/setting/settings_screen.dart';
 import '../../../core/theme/app_color.dart';
+import '../../../features/auth/presention/pages/reset_password_screen.dart';
 import '../../widget/row_widget.dart';
+import '../home.dart';
 import 'home_tab.dart';
 
 class ProfileTab extends StatefulWidget {
@@ -54,8 +56,14 @@ class _ProfileTabState extends State<ProfileTab> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 89, 0, 0),
               child: IconButton(
-                onPressed: () =>
-                    Navigator.pushReplacementNamed(context, HomeTab.route),
+                onPressed: (){
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    Home.route,
+                        (route) => false, // بيمسح الصفحات اللي فاتت عشان يظهر البوتوم بار كأنك لسه داخل
+                    arguments: 4,     // رقم 3 هو الـ Index بتاع صفحة "تذاكري" في الـ list بتاعتك
+                  );
+                },
                 icon: const Icon(Icons.chevron_left, size: 40),
               ),
             ),
@@ -108,7 +116,12 @@ class _ProfileTabState extends State<ProfileTab> {
             color: AppColor.grey,
           ),
         ),
-        RowWidget(onTap: () {}, title: "مدير كلمة المرور", icon: Icons.lock),
+        RowWidget(onTap: () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => ResetPasswordScreen()),
+          );
+        }, title: "مدير كلمة المرور", icon: Icons.lock),
         const SizedBox(height: 10),
         RowWidget(
           onTap: () => Navigator.pushReplacement(

@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:project_bander/api/api_handler.dart';
 import 'package:project_bander/core/session_manager.dart';
 import 'package:project_bander/modules/tickts/q_r_screen.dart';
 import 'package:project_bander/modules/tickts/confirmation_recovery_screen/recovery_screen.dart';
 
+import '../../tickts/tickets_storage/tickets_storage.dart';
 import '../home.dart';
 
 class TicktsTab extends StatefulWidget {
@@ -32,15 +33,64 @@ class _TicktsTabState extends State<TicktsTab> {
 
   Future<void> _loadTickets() async {
     setState(() => _isLoading = true);
+
+    // ── جيب من الـ API ────────────────────────────────────────────────
     final accountId = await SessionManager.getAccountId() ?? 0;
     final result = await ApiService().myTickets(accountId);
+
+    upcomingTickets = [];
+    completedTickets = [];
+    cancelledTickets = [];
+
+    if (result['success'] == true && result['data'] != null) {
+      _allTickets = List<Map<String, dynamic>>.from(result['data']);
+      _categorize();
+    }
+
+    // ── جيب من الـ local storage ──────────────────────────────────────
+    final localTickets = await TicketsStorage.getAll();
 
     if (mounted) {
       setState(() {
         _isLoading = false;
-        if (result['success'] == true && result['data'] != null) {
-          _allTickets = List<Map<String, dynamic>>.from(result['data']);
-          _categorize();
+        for (final t in localTickets) {
+          final card = {
+            'ticketId': t.ticketId,
+            'status': t.status == 'upcoming'
+                ? 'قادمة'
+                : t.status == 'completed'
+                ? 'مكتملة'
+                : 'ملغاة',
+            'route': '${t.fromStation} ← ${t.toStation}',
+            'date': t.tripDate,
+            'departure': t.departure,
+            'price': '${t.ticketPrice.toStringAsFixed(0)} ج.م',
+            'seatInfo': 'مقعد ${t.seatNumber}',
+            'trainName': t.trainName,
+            'statusColor': t.status == 'upcoming'
+                ? const Color(0xffBF810E)
+                : t.status == 'completed'
+                ? Colors.green
+                : Colors.red,
+            'statusBgColor': t.status == 'upcoming'
+                ? const Color(0xFFEFFF33).withOpacity(0.4)
+                : t.status == 'completed'
+                ? Colors.green.withOpacity(0.1)
+                : Colors.red.withOpacity(0.1),
+          };
+          // تجنب التكرار مع الـ API tickets
+          // تجاهل التذاكر الفاضية
+          if (t.fromStation.isEmpty || t.toStation.isEmpty) continue;
+          if (t.status == 'upcoming' &&
+              !upcomingTickets.any((x) => x['ticketId'] == t.ticketId)) {
+            upcomingTickets.insert(0, card);
+          } else if (t.status == 'completed' &&
+              !completedTickets.any((x) => x['ticketId'] == t.ticketId)) {
+            completedTickets.insert(0, card);
+          } else if (t.status == 'cancelled' &&
+              !cancelledTickets.any((x) => x['ticketId'] == t.ticketId)) {
+            cancelledTickets.insert(0, card);
+          }
         }
       });
     }
@@ -64,14 +114,13 @@ class _TicktsTabState extends State<TicktsTab> {
           _toCard(t, 'مكتملة', Colors.green, Colors.green.withOpacity(0.2)),
         );
       } else {
-        upcomingTickets.add(
-          _toCard(
-            t,
-            'قادمة',
-            const Color(0xffBF810E),
-            const Color(0xFFEFFF33).withOpacity(0.4),
-          ),
+        final card = _toCard(
+          t,
+          'قادمة',
+          const Color(0xffBF810E),
+          const Color(0xFFEFFF33).withOpacity(0.4),
         );
+        if (card['route'] != '--- ← ---') upcomingTickets.add(card);
       }
     }
   }
@@ -98,7 +147,10 @@ class _TicktsTabState extends State<TicktsTab> {
       'ticketId': ticketId,
       'status': statusLabel,
       'route': '$fromStation ← $toStation',
-      'date': departure,
+      'date': departure.split('T').first,
+      'departure': departure.contains('T')
+          ? departure.split('T').last.substring(0, 5)
+          : departure,
       'price': '$price ج.م',
       'seatInfo': 'مقعد $seatNumber',
       'trainName': trainName,
@@ -116,7 +168,7 @@ class _TicktsTabState extends State<TicktsTab> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xffffffff),
       body: Column(
         children: [
           Container(
@@ -129,7 +181,14 @@ class _TicktsTabState extends State<TicktsTab> {
                   left: 16,
                   bottom: 30,
                   child: IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () {
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        Home.route,
+                            (route) => false, // بيمسح الصفحات اللي فاتت عشان يظهر البوتوم بار كأنك لسه داخل
+                        arguments: 4,     // رقم 3 هو الـ Index بتاع صفحة "تذاكري" في الـ list بتاعتك
+                      );
+                    },
                     icon: const Icon(Icons.arrow_back_ios, size: 20),
                     color: Colors.black,
                   ),
@@ -259,6 +318,7 @@ class _TicktsTabState extends State<TicktsTab> {
       ),
       child: Column(
         children: [
+          // ── التعديل الوحيد: أضفنا Flexible على نص المحطات ──────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -280,26 +340,40 @@ class _TicktsTabState extends State<TicktsTab> {
                   ),
                 ),
               ),
-              Text(
-                ticket['route'],
-                style: GoogleFonts.cairo(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  ticket['route'],
+                  textAlign: TextAlign.end,
+                  style: GoogleFonts.cairo(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 15),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              ticket['date'],
-              style: GoogleFonts.cairo(
-                color: Colors.grey,
-                fontSize: 18,
-                fontWeight: FontWeight.w400,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                ticket['departure'] ?? '',
+                style: GoogleFonts.cairo(
+                  color: Colors.grey,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                ),
               ),
-            ),
+              Text(
+                ticket['date'],
+                style: GoogleFonts.cairo(
+                  color: Colors.grey,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           Row(
@@ -311,7 +385,7 @@ class _TicktsTabState extends State<TicktsTab> {
                     "سعر التذكرة",
                     style: GoogleFonts.cairo(
                       color: Colors.black,
-                      fontSize: 19,
+                      fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -319,7 +393,7 @@ class _TicktsTabState extends State<TicktsTab> {
                   const Icon(
                     Icons.price_change_rounded,
                     color: Color(0xFF0A7A82),
-                    size: 25,
+                    size: 20,
                   ),
                 ],
               ),
@@ -329,7 +403,7 @@ class _TicktsTabState extends State<TicktsTab> {
                     "المقعد",
                     style: GoogleFonts.cairo(
                       color: Colors.black,
-                      fontSize: 24,
+                      fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
@@ -337,7 +411,7 @@ class _TicktsTabState extends State<TicktsTab> {
                   const Icon(
                     Icons.event_seat_rounded,
                     color: Color(0xFF0A7A82),
-                    size: 25,
+                    size: 20,
                   ),
                 ],
               ),
@@ -347,12 +421,12 @@ class _TicktsTabState extends State<TicktsTab> {
                     "القطار",
                     style: GoogleFonts.cairo(
                       color: Colors.black,
-                      fontSize: 24,
+                      fontSize: 14,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
                   const SizedBox(width: 5),
-                  const Icon(Icons.train, color: Color(0xFF0A7A82), size: 25),
+                  const Icon(Icons.train, color: Color(0xFF0A7A82), size: 20),
                 ],
               ),
             ],
