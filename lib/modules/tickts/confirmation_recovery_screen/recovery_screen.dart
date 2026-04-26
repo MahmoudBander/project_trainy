@@ -2,6 +2,7 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:project_bander/api/api_handler.dart';
 import 'package:project_bander/core/session_manager.dart';
+import 'package:project_bander/modules/tickts/tickets_storage/tickets_storage.dart';
 import 'confirmation_recovery_screen.dart';
 
 class RecoveryScreen extends StatefulWidget {
@@ -26,8 +27,11 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
   }
 
   Future<void> _loadDate() async {
-    final date  = await SessionManager.getTripDate()   ?? '';
-    final price = await SessionManager.getTicketPrice() ?? 0.0;
+    final date    = await SessionManager.getTripDate() ?? '';
+    // جيب السعر من الـ TicketsStorage بالـ ticketId مش من SessionManager
+    final tickets = await TicketsStorage.getAll();
+    final ticket  = tickets.where((t) => t.ticketId == widget.ticketId).toList();
+    final price   = ticket.isNotEmpty ? ticket.first.ticketPrice : widget.ticketPrice;
     if (mounted) setState(() {
       _tripDate    = date.isNotEmpty ? date : '---';
       _ticketPrice = price;
@@ -54,7 +58,6 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
       }
       setState(() => _refundId = refundId);
     }
-    // روح للصفحة التالية في كل الأحوال
     if (mounted) Navigator.push(context,
         MaterialPageRoute(builder: (_) => ConfirmationRecoveryScreen(
           ticketId:    widget.ticketId,
@@ -94,7 +97,6 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── رقم الطلب + الحالة ─────────────────────────────────
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -116,8 +118,6 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
-
-                    // ── كارد بيانات التذكرة ────────────────────────────────
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
@@ -170,17 +170,13 @@ class _RecoveryScreenState extends State<RecoveryScreen> {
                       ),
                     ),
                     const SizedBox(height: 40),
-
-                    // ── سبب الاسترداد ──────────────────────────────────────
                     Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                       Text("سبب الاسترداد ؟",
                           style: GoogleFonts.cairo(fontSize: 24, fontWeight: FontWeight.w700)),
                     ]),
                     const SizedBox(height: 24),
-
                     ...['الغاء الرحلة', 'تغيير موعد السفر', 'خطأ في الحجز', 'سبب آخر']
                         .map((reason) => _buildReasonTile(reason)),
-
                     if (_isLoading)
                       const Padding(
                           padding: EdgeInsets.only(top: 20),

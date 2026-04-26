@@ -1,5 +1,6 @@
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:project_bander/core/notifications_storage.dart';
 
 class NotificationService {
   static Future<void> init() async {
@@ -27,7 +28,6 @@ class NotificationService {
     await AwesomeNotifications().requestPermissionToSendNotifications();
   }
 
-  // ── إشعار فوري ──────────────────────────────────────────────────────
   static Future<void> show({
     required int    id,
     required String title,
@@ -42,9 +42,15 @@ class NotificationService {
         notificationLayout: NotificationLayout.Default,
       ),
     );
+    await NotificationsStorage.add(LocalNotification(
+      id:        id,
+      title:     title,
+      message:   body,
+      type:      'trainy',
+      createdAt: DateTime.now(),
+    ));
   }
 
-  // ── إشعار مجدول ─────────────────────────────────────────────────────
   static Future<void> schedule({
     required int      id,
     required String   title,
@@ -64,7 +70,6 @@ class NotificationService {
     );
   }
 
-  // ── إلغاء إشعار ─────────────────────────────────────────────────────
   static Future<void> cancel(int id) async =>
       await AwesomeNotifications().cancel(id);
 }

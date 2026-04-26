@@ -36,8 +36,8 @@ class _ConfirmationRecoveryScreenState
       setState(() {
         _tripDate = date.isNotEmpty ? date : '---';
         if (widget.ticketPrice > 0) {
-          _refundAmount =
-              '${(widget.ticketPrice * 0.85).toStringAsFixed(2)} ج.م';
+        _refundAmount = '${(widget.ticketPrice * 0.85).toStringAsFixed(2)} ج.م';
+              '${((widget.ticketPrice + 20) * 0.85).toStringAsFixed(2)} ج.م';
         }
       });
   }
@@ -299,8 +299,8 @@ class _ConfirmationRecoveryScreenState
                                         'cancelled',
                                       );
                                     }
-                                    final refund = (widget.ticketPrice * 0.85)
-                                        .toStringAsFixed(0);
+                                    final refund = (widget.ticketPrice * 0.85).toStringAsFixed(0);
+
                                     await NotificationService.show(
                                       id: widget.ticketId + 2000,
                                       title: 'تم إلغاء التذكرة',
@@ -370,3 +370,5 @@ class _ConfirmationRecoveryScreenState
     );
   }
 }
+
+

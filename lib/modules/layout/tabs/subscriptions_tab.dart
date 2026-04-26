@@ -99,7 +99,7 @@ class _SubscriptionsTabState extends State<SubscriptionsTab> {
                     bottom: 30,
                     child: IconButton(
                       onPressed: () => _switchView(0),
-                      icon: const Icon(Icons.arrow_back),
+                      icon: const Icon(Icons.chevron_left),
                       iconSize: 24,
                       color: Colors.black,
                     ),

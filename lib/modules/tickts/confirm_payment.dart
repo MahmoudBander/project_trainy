@@ -79,6 +79,15 @@ class _ConfirmPaymentState extends State<ConfirmPayment> {
       body:  'تم دفع $totalPaid ج.م بنجاح',
     );
     final dep  = await SessionManager.getDeparture() ?? '';
+    // إشعار فوري بوقت القطار
+    final depImmediate = dep.replaceAll('وقت المغادرة', '').trim();
+    if (depImmediate.isNotEmpty) {
+      await NotificationService.show(
+        id:    ticketId + 500,
+        title: 'تذكير بموعد قطارك',
+        body:  'قطارك تحرك الساعة $depImmediate',
+      );
+    }
     final date = await SessionManager.getTripDate()  ?? '';
     try {
       final timeMatch = RegExp(r'(\d{1,2}):(\d{2})').firstMatch(dep);
